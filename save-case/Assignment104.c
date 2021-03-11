@@ -500,7 +500,7 @@ int main(int argc, char* argv[])
 	populate_heap(&h);//all monsters and pc get loaded on a heap
 
 	init_terminal();
-
+	print_dungeon();
 	i = 0;
 	player_node* curr = NULL;
 	while (!(i))
@@ -524,6 +524,7 @@ int main(int argc, char* argv[])
 	}
 	if (i==2){
 		print_dungeon();
+		usleep(2000000);
 		print_end(0);//printf("\n\n\n\n\n\n\n\n\n\n\n\nPC LOST\n\n\n\n\n\n\n\n");
 	}
 	else if (i==3)print_end(1);//printf("\n\n\n\n\n\n\n\n\n\n\n\nPC WON\n\n\n\n\n\n\n\n");
@@ -1270,31 +1271,59 @@ int next_move(player_node *pn, PC* pc, int* ifend, player_node_heap* h)
 	if (pn->ifPC==1) {
 		//printf("\nPC's turn, score of %d \n", pn->next_turn);
 		int nextx, nexty;
-		getkey(pn->pc->x, pn->pc->y, nextx, nexty, ifend);
+		getkey(pn->pc->x, pn->pc->y, &nextx, &nexty);
 
+		//boundary check
+		if (nextx < 0 || nextx >= xlenMax) nextx = pn->pc->x;
+		if (nexty < 0 || nexty >= ylenMax) nexty = pn->pc->y;
 
-		getNeighbour(pn->pc->x, pn->pc->y, n);
-		for (int i = 0; i < n->size; i++)
+		if ( (pn->pc->x!=nextx) || (pn->pc->y!=nexty) )
 		{
-			if(grid_players[n->store[i][0]][n->store[i][1]]!=NULL)
+			if(grid_players[nextx][nexty]!=NULL)
 			{
-				kill_player(grid_players[n->store[i][0]][n->store[i][1]], h);
-				//player_node* temp = pn;
-				grid_players[pn->pc->x][pn->pc->y] = NULL;
-				pn->pc->x = n->store[i][0];
-				pn->pc->y = n->store[i][1];
-				grid_players[n->store[i][0]][n->store[i][1]] = pn;
-				break;
+				kill_player(grid_players[nextx][nexty], h);
 			}
+
+			grid_players[pn->pc->x][pn->pc->y] = NULL;
+			pn->pc->x = nextx;
+			pn->pc->y = nexty;
+			grid_players[pn->pc->x][pn->pc->y] = pn;
+
+			//wall check
+			if (grid[pn->pc->x][pn->pc->y] == ' ')
+			{
+				grid[pn->pc->x][pn->pc->y] = '#';
+				hardness[pn->pc->x][pn->pc->y] = 0;
+			}
+
 		}
-
-
 		pn->next_turn = pn->next_turn + (1000/(pn->pc->speed));
-		usleep(250000);
 		print_dungeon();
-		free(n);
-		//printf("\n\n\n");
+
 		return 0;
+
+		// getNeighbour(pn->pc->x, pn->pc->y, n);
+		// for (int i = 0; i < n->size; i++)
+		// {
+		// 	if(grid_players[n->store[i][0]][n->store[i][1]]!=NULL)
+		// 	{
+		// 		kill_player(grid_players[n->store[i][0]][n->store[i][1]], h);
+		// 		//player_node* temp = pn;
+		// 		grid_players[pn->pc->x][pn->pc->y] = NULL;
+		// 		pn->pc->x = n->store[i][0];
+		// 		pn->pc->y = n->store[i][1];
+		// 		grid_players[n->store[i][0]][n->store[i][1]] = pn;
+		// 		break;
+		// 	}
+		// }
+		//
+		//
+		// pn->next_turn = pn->next_turn + (1000/(pn->pc->speed));
+		// usleep(250000);
+		// print_dungeon();
+		// free(n);
+		// //printf("\n\n\n");
+		// return 0;
 
 	}
 
@@ -1483,7 +1512,7 @@ void init_terminal()
 
 int print_end(int success)
 {
-	for (int i = 0; i < ylenMax; i++){
+	for (int i = 0; i < ylenMax+1; i++){
 		for (int j = 0; j< xlenMax; j++){
 			mvaddch(i,j,' ');
 		}
@@ -1503,11 +1532,25 @@ int print_end(int success)
 	usleep(2000000);
 }
 
-int getkey(int x,int y, int *nextx,int *nexty, int* ifend)
+int getkey(int prevx,int prevy, int *x,int *y)
 {
-
+	chtype ch = getch();
+	*x = prevx;
+	*y = prevy;
+	//mvaddch(*y, *x,' ');
+	if (ch=='8') --*y;
+	else if (ch=='5');
+	else if (ch=='6') ++*x;
+	else if (ch=='4')  --*x;
+	else if (ch=='2') ++*y;
+	else if (ch=='1') {++*y; --*x;}
+	else if (ch=='3') {++*y; ++*x;}
+	else if (ch=='7') {--*x; --*y;}
+	else if (ch=='9') {--*y; ++*x;}
+	//else if (ch=='q') endwin();
+	//game(y, x);
 }
-int getmonsterlist()//this should inherit a linked list of monsters//this should create a while loop that only updates on escape
-{
-
-}
+// int getmonsterlist()//this should inherit a linked list of monsters//this should create a while loop that only updates on escape
+// {
+//
+// }
