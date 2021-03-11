@@ -87,7 +87,8 @@ typedef struct player_node_heap {
 	//int size;
 } player_node_heap;
 
-int getkey(int x,int y, int *nextx, int *nexty);
+int getmonsterlist(player_node_heap* h);
+int getkey(int x,int y, int *nextx, int *nexty, int* ifend, player_node_heap* h);
 
 void init_terminal();
 int print_end(int success);
@@ -528,6 +529,7 @@ int main(int argc, char* argv[])
 		print_end(0);//printf("\n\n\n\n\n\n\n\n\n\n\n\nPC LOST\n\n\n\n\n\n\n\n");
 	}
 	else if (i==3)print_end(1);//printf("\n\n\n\n\n\n\n\n\n\n\n\nPC WON\n\n\n\n\n\n\n\n");
+	else if (i==5) print_end(5);///prints quit
 
 	endwin();
 
@@ -1271,7 +1273,8 @@ int next_move(player_node *pn, PC* pc, int* ifend, player_node_heap* h)
 	if (pn->ifPC==1) {
 		//printf("\nPC's turn, score of %d \n", pn->next_turn);
 		int nextx, nexty;
-		getkey(pn->pc->x, pn->pc->y, &nextx, &nexty);
+		print_dungeon();
+		getkey(pn->pc->x, pn->pc->y, &nextx, &nexty, ifend, h);
 
 		//boundary check
 		if (nextx < 0 || nextx >= xlenMax) nextx = pn->pc->x;
@@ -1299,6 +1302,7 @@ int next_move(player_node *pn, PC* pc, int* ifend, player_node_heap* h)
 		}
 		pn->next_turn = pn->next_turn + (1000/(pn->pc->speed));
 		print_dungeon();
+		//usleep(10000);
 
 		return 0;
 
@@ -1517,8 +1521,13 @@ int print_end(int success)
 			mvaddch(i,j,' ');
 		}
 	}
+	if (success==5)
+	{
+		char* win = "YOU QUIT!!!!!!!!!!!!!.";
+		for (int i = 0; win[i]!='.'; i++) mvaddch(10, 30+i, win[i]);
+	}
 
-	if (success)
+	else if (success==1)
 	{
 		char* win = "YOU WIN!!!!!!!!!!!!!.";
 		for (int i = 0; win[i]!='.'; i++) mvaddch(10, 30+i, win[i]);
@@ -1532,9 +1541,15 @@ int print_end(int success)
 	usleep(2000000);
 }
 
-int getkey(int prevx,int prevy, int *x,int *y)
+int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 {
+	int i;
 	chtype ch = getch();
+
+	/////////////////////////clearing the top msd board in case we need to give a msg after key is pressed//////////
+	for (i = 0; i < xlenMax; i++) mvaddch(0,i,' ');
+
+	/////////////////////
 	*x = prevx;
 	*y = prevy;
 	//mvaddch(*y, *x,' ');
@@ -1547,10 +1562,116 @@ int getkey(int prevx,int prevy, int *x,int *y)
 	else if (ch=='3') {++*y; ++*x;}
 	else if (ch=='7') {--*x; --*y;}
 	else if (ch=='9') {--*y; ++*x;}
+	else if (ch=='q') {*endif = 5;}
+	else if (ch=='m');
+
 	//else if (ch=='q') endwin();
 	//game(y, x);
+
+	//none of the recongnised keys were selected
+	else
+	{
+		char* lose = "THE KEY WAS UNRECOGNISED, TRY AGAIN!.";
+		for (i = 0; lose[i]!='.'; i++) mvaddch(0, i, lose[i]);
+		refresh();
+
+		getkey(prevx, prevy, x,y, endif,h);
+	}
+	//boundary check - pc will get an error if it hits the boundary and and an opportunity to put in another key////
+	if (*x < 0 || *x >= xlenMax || *y < 0 || *y >= ylenMax)//boundary check
+	{
+		*x = prevx;
+		*y = prevy;
+		char* lose = "YOU HAVE HIT THE EDGE, YOU CANNOT GO ANY FURTHER.";
+		for (i = 0; lose[i]!='.'; i++) mvaddch(0, i, lose[i]);
+		refresh();
+
+		getkey(prevx, prevy, x,y, endif,h);
+	}
+	//if we come across a wall and since the player cannot tunnel, we ask for another key///
+	if(grid[*x][*y]==' ')
+	{
+		*x = prevx;
+		*y = prevy;
+		char* lose = "SORRY YOU CAN'T TUNNEL YOUR WAY THROUGH. YOU NEED TO FIND AN EXISTING TUNNEL!!.";
+		for (i = 0; lose[i]!='.'; i++) mvaddch(0, i, lose[i]);
+		refresh();
+
+		getkey(prevx, prevy, x,y, endif,h);
+	}
+	if (ch=='m')
+	{
+		getmonsterlist(h);
+		getkey(prevx, prevy, x,y, endif,h);
+	}
+
 }
-// int getmonsterlist()//this should inherit a linked list of monsters//this should create a while loop that only updates on escape
-// {
-//
-// }
+int getmonsterlist(player_node_heap* h)//this should inherit a linked list of monsters//this should create a while loop that only updates on escape
+{
+	player_node* current = (h->head);
+	player_node* print_node;
+	int left_offset = 3;
+	int top_offset = 16;
+	//int i = 1;
+	while(1)
+	{
+		for (int j = left_offset-1; j < ylenMax-left_offset+1; j++)
+		{
+			for(int k = top_offset-1; k <xlenMax-top_offset; k++)
+			mvaddch(j, k, ' ');
+		}
+		refresh();
+		//usleep(2000000);
+
+		int count = 0;
+		print_node = current;
+
+		char* player_info_2 = "=============================================.";
+		int cursor2;
+		for ( cursor2 = 0; player_info_2[cursor2]!='.'; cursor2++) mvaddch(left_offset+count, top_offset+cursor2, player_info_2[cursor2]);
+		count++;
+		player_info_2 = "NPC LIST WITH CHARACTERS AND DISTANCE.";
+		for ( cursor2 = 0; player_info_2[cursor2]!='.'; cursor2++) mvaddch(left_offset+count, top_offset+cursor2, player_info_2[cursor2]);
+		count++;
+		player_info_2 = "=============================================.";
+		for ( cursor2 = 0; player_info_2[cursor2]!='.'; cursor2++) mvaddch(left_offset+count, top_offset+cursor2, player_info_2[cursor2]);
+		count++;
+
+
+		int counter2 = 0;//this stores the num of monsters on display
+
+		while(print_node!= NULL && counter2 < 10)
+		{
+			if (!(print_node->ifPC))
+			{
+				int cursor;
+				char* player_info = "PLAYER  .";
+				for (cursor = 0; player_info[cursor]!='.'; cursor++) mvaddch(left_offset+count, top_offset+cursor, player_info[cursor]);
+				if (print_node->npc->character<10)
+				mvaddch(left_offset+count, 17+cursor, print_node->npc->character + '0');
+				else mvaddch(left_offset+count, 17+cursor, print_node->npc->character + 'a'-10);
+				count++;
+				counter2++;
+				print_node = print_node->next;
+
+			}
+			else print_node = print_node->next;
+		}
+
+		player_info_2 = "=============================================.";
+		for ( cursor2 = 0; player_info_2[cursor2]!='.'; cursor2++) mvaddch(left_offset+count, top_offset+cursor2, player_info_2[cursor2]);
+
+		refresh();
+		int key = getch();
+		if (key==27) {print_dungeon(); break;}//if ESC pressed
+		else if (key == 259) //if UP key is pressed
+		{
+			if (current != NULL && current->prev) current = current->prev;
+		}
+		else if (key == 258)//if DOWN key is pressed
+		{
+			if (current != NULL && current->next) current = current->next;
+		}
+
+	}
+}
