@@ -1521,7 +1521,7 @@ void init_terminal()
 	keypad(stdscr, TRUE);
 
 }
-
+/*This is simply use to display msgs like 'You lose' or 'You win' or 'You quit'.*/
 int print_end(int success)
 {
 	for (int i = 0; i < ylenMax+1; i++){
@@ -1548,7 +1548,7 @@ int print_end(int success)
 	refresh();
 	usleep(2000000);
 }
-
+/*This method was added to the nex_move method, where to determine next move, get key fetches a key and reacts accordingly*/
 int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 {
 	int i;
@@ -1628,7 +1628,8 @@ int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 	}
 
 }
-int getmonsterlist(player_node_heap* h)//this should inherit a linked list of monsters//this should create a while loop that only updates on escape
+/*This method allows for the screen to show the monsters with their names/characters and their position relative to the pc*/
+int getmonsterlist(player_node_heap* h)
 {
 	player_node* current = (h->head);
 	player_node* print_node;
@@ -1684,6 +1685,7 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 				{
 					if ((pc->y - print_node->npc->y) < 10)
 					{
+						cursor++;
 						mvaddch(left_offset+count, 17+cursor, ('0' + pc->y - print_node->npc->y));
 						cursor++;
 					}else{
@@ -1699,6 +1701,7 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 				{
 					if ((-pc->y + print_node->npc->y) < 10)
 					{
+						cursor++;
 						mvaddch(left_offset+count, 17+cursor, ('0' - pc->y + print_node->npc->y));
 						cursor++;
 					}else{
@@ -1718,6 +1721,7 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 				{
 					if ((pc->x - print_node->npc->x) < 10)
 					{
+						cursor++;
 						mvaddch(left_offset+count, 17+cursor, ('0' + pc->x - print_node->npc->x));
 						cursor++;
 					}else{
@@ -1733,6 +1737,7 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 				{
 					if ((-pc->x + print_node->npc->x) < 10)
 					{
+						cursor++;
 						mvaddch(left_offset+count, 17+cursor, ('0' - pc->x + print_node->npc->x));
 						cursor++;
 					}else{

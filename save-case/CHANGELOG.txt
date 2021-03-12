@@ -1,0 +1,35 @@
+commit 91679427536d7176ea6a26eaf927219417fbad47
+Author: Saljooq <altaf.saljooq@outlook.com>
+Date:   Thu Mar 4 21:05:20 2021 -0600
+
+    Exhaustive tests done, valgrind tests passed, Readme updated and comments added. All test_prints removed or commented out
+
+commit 30a9c4614d05210d6250244583999d401cdda784
+Author: Saljooq <altaf.saljooq@outlook.com>
+Date:   Thu Mar 4 19:09:55 2021 -0600
+
+    Mem errors fixed, all possible iterations of monsters created, Readme and Makefile, with debug, created. Comments remain
+
+commit c0ffa2a43e74559ecf256f44cbbb3640c1a2a332
+Author: Saljooq <altaf.saljooq@outlook.com>
+Date:   Thu Mar 4 01:09:38 2021 -0600
+
+    Finally got djik algo, priority queue, and memory allocation right. There is only variation of tunneler/non-tunneler and erratic/non-erratic. Need to introduce intelligent/non-intel and tele/non-tele variation
+
+commit b8a70e85564d74734c93e9b02691f729455db37a
+Author: Saljooq <altaf.saljooq@outlook.com>
+Date:   Wed Mar 3 16:45:41 2021 -0600
+
+    heap for player nodes added
+
+commit d9be9765c0e609ffe83ec1f70fac5e47339494e5
+Author: Saljooq <altaf.saljooq@outlook.com>
+Date:   Wed Mar 3 00:18:55 2021 -0600
+
+    code from 103 imported, PC and monsters initialised, heap in process of being built, print edited
+
+commit e6eed990daceaabb232640e5894e08ce999c7b8f
+Author: Saljooq <75107181+Saljooq@users.noreply.github.com>
+Date:   Wed Mar 3 01:16:43 2021 -0500
+
+    Initial commit
