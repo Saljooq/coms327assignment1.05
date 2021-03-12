@@ -520,6 +520,8 @@ int main(int argc, char* argv[])
 			// 	curr2 = curr2->next;
 			// }
 			// printf("\n");
+
+			//if i=15..random_generator(&h, &pc, j); ->free heap. kill_all, {generate new dungeon} initialise pc. initialise players
 		}
 
 	}
@@ -1612,7 +1614,13 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 	player_node* print_node;
 	int left_offset = 3;
 	int top_offset = 16;
-	//int i = 1;
+
+	PC* pc;
+	while (!(current->ifPC)) current=current->next;
+	pc = current->pc;
+
+
+	current = (h->head);
 	while(1)
 	{
 		for (int j = left_offset-1; j < ylenMax-left_offset+1; j++)
@@ -1650,6 +1658,74 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 				if (print_node->npc->character<10)
 				mvaddch(left_offset+count, 17+cursor, print_node->npc->character + '0');
 				else mvaddch(left_offset+count, 17+cursor, print_node->npc->character + 'a'-10);
+				cursor+=5;
+
+				if (pc->y > print_node->npc->y)
+				{
+					if ((pc->y - print_node->npc->y) < 10)
+					{
+						mvaddch(left_offset+count, 17+cursor, ('0' + pc->y - print_node->npc->y));
+						cursor++;
+					}else{
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((pc->y - print_node->npc->y)/10)));
+						cursor++;
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((pc->y - print_node->npc->y)%10)));
+						cursor++;
+					}
+					mvaddch(left_offset+count, 17+cursor, 'N');
+					cursor++;
+				}
+				else if (pc->y < print_node->npc->y)
+				{
+					if ((-pc->y + print_node->npc->y) < 10)
+					{
+						mvaddch(left_offset+count, 17+cursor, ('0' - pc->y + print_node->npc->y));
+						cursor++;
+					}else{
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((-pc->y + print_node->npc->y)/10)));
+						cursor++;
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((-pc->y + print_node->npc->y)%10)));
+						cursor++;
+					}
+					mvaddch(left_offset+count, 17+cursor, 'S');
+					cursor++;
+				}
+				else cursor+=2;
+
+				cursor+=4;
+
+				if (pc->x > print_node->npc->x)
+				{
+					if ((pc->x - print_node->npc->x) < 10)
+					{
+						mvaddch(left_offset+count, 17+cursor, ('0' + pc->x - print_node->npc->x));
+						cursor++;
+					}else{
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((pc->x - print_node->npc->x)/10)));
+						cursor++;
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((pc->x - print_node->npc->x)%10)));
+						cursor++;
+					}
+					mvaddch(left_offset+count, 17+cursor, 'W');
+					cursor++;
+				}
+				else if (pc->x < print_node->npc->x)
+				{
+					if ((-pc->x + print_node->npc->x) < 10)
+					{
+						mvaddch(left_offset+count, 17+cursor, ('0' - pc->x + print_node->npc->x));
+						cursor++;
+					}else{
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((-pc->x + print_node->npc->x)/10)));
+						cursor++;
+						mvaddch(left_offset+count, 17+cursor, ('0' + ((-pc->x + print_node->npc->x)%10)));
+						cursor++;
+					}
+					mvaddch(left_offset+count, 17+cursor, 'E');
+					cursor++;
+				}
+
+
 				count++;
 				counter2++;
 				print_node = print_node->next;
