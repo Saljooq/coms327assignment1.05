@@ -87,6 +87,7 @@ typedef struct player_node_heap {
 	//int size;
 } player_node_heap;
 
+int random_generator(player_node_heap** h, PC** pc, int nummon, room** rooms);
 int getmonsterlist(player_node_heap* h);
 int getkey(int x,int y, int *nextx, int *nexty, int* ifend, player_node_heap* h);
 
@@ -308,7 +309,7 @@ int main(int argc, char* argv[])
 		//printf("load found - final - no error while loading\n");
 
 	}
-	//this is where we start processing the dungron if the load was not found
+	//this is where we start processing the dungeon if the load was not found
 	else
 	{
 
@@ -522,6 +523,11 @@ int main(int argc, char* argv[])
 			// printf("\n");
 
 			//if i=15..random_generator(&h, &pc, j); ->free heap. kill_all, {generate new dungeon} initialise pc. initialise players
+		}
+		if (i == 15)
+		{
+			random_generator(&h, &pc, j, &rooms);
+			i=0;
 		}
 
 	}
@@ -1555,17 +1561,31 @@ int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 	*x = prevx;
 	*y = prevy;
 	//mvaddch(*y, *x,' ');
-	if (ch=='8') --*y;
-	else if (ch=='5');
-	else if (ch=='6') ++*x;
-	else if (ch=='4')  --*x;
-	else if (ch=='2') ++*y;
-	else if (ch=='1') {++*y; --*x;}
-	else if (ch=='3') {++*y; ++*x;}
-	else if (ch=='7') {--*x; --*y;}
-	else if (ch=='9') {--*y; ++*x;}
-	else if (ch=='q') {*endif = 5;}
+	if (ch=='8'||ch=='k') --*y;
+	else if (ch=='5'||ch==' '|| ch=='.');
+	else if (ch=='6'||ch=='l') ++*x;
+	else if (ch=='4'||ch=='h')  --*x;
+	else if (ch=='2'||ch=='j') ++*y;
+	else if (ch=='1'||ch=='b') {++*y; --*x;}
+	else if (ch=='3'||ch=='n') {++*y; ++*x;}
+	else if (ch=='7'||ch=='y') {--*x; --*y;}
+	else if (ch=='9'||ch=='u') {--*y; ++*x;}
+	else if (ch=='q'||ch=='Q') {*endif = 5;}
 	else if (ch=='m');
+	else if (ch=='<')
+	{
+		if (grid[prevx][prevy]=='<')
+		{
+			*endif=15;
+		}
+	}
+	else if (ch=='>')
+	{
+		if (grid[prevx][prevy]=='>')
+		{
+			*endif=15;
+		}
+	}
 
 	//else if (ch=='q') endwin();
 	//game(y, x);
@@ -1750,4 +1770,165 @@ int getmonsterlist(player_node_heap* h)//this should inherit a linked list of mo
 		}
 
 	}
+}
+/*This should ensure a completely random generated dungeon if the player takes the stairs
+*/
+int random_generator(player_node_heap** h, PC** pc, int nummon, room** rooms)
+{
+	int i,j,x,y;
+
+	for (i = 0; i < xlenMax; i++)
+	{
+		for (j = 0; j < ylenMax; j++)
+		{
+			grid[i][j] = ' ';
+			grid_players[i][j]=NULL;
+		}
+	}
+
+	//we will start out by creating a seed with time-0 to access some randomeness
+	srand(time(0));
+
+	//populating the hardness randomly
+	for (i = 0; i < ylenMax; i++)
+	{
+		for (j = 0; j < xlenMax; j++)
+		{
+			hardness[j][i] = 1 + (rand() % 254);
+		}
+	}
+
+	int numRooms = MIN_ROOMS + (rand() % (MAX_ROOMS - MIN_ROOMS + 1));
+
+	*rooms = malloc(numRooms * sizeof(room));
+
+	int resizer = not_so_rand_roomsize_resizer(numRooms);//we use this function to obtain a denominator to limit the size of the rooms
+
+	//the if conditions used to obtain the max length of the room help avoid the floating point exception (core dump) later when we use it with modulus later
+	int maxRoomxlen = xlenMax / resizer;
+	if (maxRoomxlen <= minRoomxlen) maxRoomxlen = minRoomxlen + 1;
+
+
+	int maxRoomylen = ylenMax / resizer;
+	if (maxRoomylen <= minRoomylen) maxRoomylen = minRoomylen + 1;
+
+	//printf("num Rooms = %d\n", numRooms); //uncomment to see num of rooms generated
+
+	//this loop keeps going till random coordinates and lengths are obtained from random function that make sense
+	while (1)
+	{
+		for (i = 0; i < numRooms; i++)
+		{
+			(*rooms)[i].xloc = rand() % xlenMax;
+			(*rooms)[i].yloc = rand() % ylenMax;
+			(*rooms)[i].xlen = minRoomxlen + rand() % ((maxRoomxlen) - minRoomxlen);
+			(*rooms)[i].ylen = minRoomylen + rand() % ((maxRoomylen) - minRoomylen);
+		}
+		if (makes_sense((*rooms), numRooms)) break;
+	}
+
+
+	//Next we populate the grid with '.' as per the randomised coordinates that made sense that we obtained earlier
+	for (x = 0; x < numRooms; x++)
+	{
+
+		for (i = (*rooms)[x].xloc; i < ((*rooms)[x].xloc + (*rooms)[x].xlen); i++)
+		{
+			for (j = (*rooms)[x].yloc; j < ((*rooms)[x].yloc + (*rooms)[x].ylen); j++)
+			{
+				grid[i][j] = '.';
+				hardness[i][j] = 0;
+			}
+		}
+	}
+
+	//next we carve out a path between adjacent rooms in which we use the former's x coordinate and latter's y-coordinates to create a mid-point
+	for (int x = 0; x < numRooms - 1; x++)
+	{
+		int middlex = (*rooms)[x].xloc;
+		int middley = (*rooms)[x + 1].yloc;
+		int i;//i will save the direction of the path
+
+		if ((*rooms)[x].yloc > middley) i = 1;
+		else i = -1;
+
+		//first we go from from midpoint to former room
+		for ( j = middley; j != (*rooms)[x].yloc; j += i)
+		{
+			if (grid[middlex][j] != '.')
+			{
+				grid[middlex][j] = '#';
+				hardness[middlex][j] = 0;
+			}
+		}
+
+		//then we go from midpoint to latter room
+		if ((*rooms)[x + 1].xloc > middlex) i = 1;
+		else i = -1;
+
+		for ( j = middlex; j != (*rooms)[x + 1].xloc; j += i)
+		{
+			if (grid[j][middley] != '.')
+			{
+				grid[j][middley] = '#';
+				hardness[j][middley] = 0;
+			}
+		}
+
+	}
+
+
+	//here we randomise the upwards and downward staircases and insert them wherever the random coordinates and its horizontal neighbours are part of room
+	int numUpstairs, numDownstairs;
+	for (i = 0; i < 2; i++)
+	{
+		//first iteration adds random number of '<' to the grid, second adds '<'
+		char staircase;
+		if (i == 0) staircase = '<';
+		else staircase = '>';
+
+		int numStairs = minStairs + rand() % ((maxStairs) - minStairs);
+		if (i == 0)
+		{
+			staircase = '<';
+			numUpstairs = numStairs;
+
+		}
+		else
+		{
+			staircase = '>';
+			numDownstairs = numStairs;
+		}
+
+		for (j = 0; j < numStairs; j++)
+		{
+			//while loops below keeps going till a successfuk coordinate is found
+			while (1)
+			{
+				x = 1 + (rand() % (xlenMax - 2));//this ensures that we're not on the left or the right edge because the condition below checks horizontal neighbours
+				y = (rand() % (ylenMax));
+
+				if (grid[x][y] == '.' && grid[x - 1][y] == '.' && grid[x + 1][y] == '.')
+				{
+					grid[x][y] = staircase;
+					break;
+				}
+			}
+
+
+		}
+	}
+
+
+
+	//PC* pc;
+	initialize_pc(pc);//this is where pc gets initialised
+	//printf("\nPC has been initialised; the coordinates accessible from main are %d, %d\n", pc->x, pc->y);
+	initialize_players(nummon, *pc);//this initialises all the bots
+	//player_node_heap* h;
+	populate_heap(h);//all monsters and pc get loaded on a heap
+
+	print_dungeon();
+
+
 }
